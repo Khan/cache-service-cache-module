@@ -154,6 +154,20 @@ Flush all keys and values.
 
 * callback: type: function
 
+## .flushExpired([cb])
+
+Flush all expired keys and values.
+
+* callback: type: function
+
+## .flushUnused(timeout, [cb])
+
+Flush keys and values that haven't been used in the last N seconds
+(as specified by the timeout).
+
+* timeout: type: int
+* callback: type: function
+
 # Using Background Refresh
 
 With a typical cache setup, you're left to find the perfect compromise between having a long expiration so that users don't have to suffer through the worst case load time, and a short expiration so data doesn't get stale. `cache-service-cache-module` eliminates the need to worry about users suffering through the longest wait time by automatically refreshing keys for you. Here's how it works:
