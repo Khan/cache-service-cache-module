@@ -218,11 +218,11 @@ function cacheModule(config){
    */
   self.flushUnused = function(timeout, cb){
     log(false, '.flushUnused() called');
-    var now = Date.now() - (timeout * 1000);
+    var nowMinusTimeout = Date.now() - (timeout * 1000);
     for(var key in cache.lastUsed){
       if(cache.db.hasOwnProperty(key)){
         var lastUsed = cache.lastUsed[key];
-        if(lastUsed <= now){
+        if(lastUsed <= nowMinusTimeout){
           expire(key);
         }
       }
