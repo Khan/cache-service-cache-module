@@ -31,6 +31,7 @@ function cacheModule(config){
   var cache = {
     db: {},
     expirations: {},
+    lastUsed: {},
     refreshKeys: {}
   };
   var storageKey;
@@ -55,6 +56,7 @@ function cacheModule(config){
         if(typeof output === 'object'){
           output = cloneObject(output);
         }
+        cache.lastUsed[key] = now;
         cb(null, output);
       }
       else{
@@ -106,8 +108,10 @@ function cacheModule(config){
     if(!self.readOnly){
       try {
         expiration = (expiration) ? (expiration * 1000) : (self.defaultExpiration * 1000);
-        var exp = expiration + Date.now();
+        var now = Date.now();
+        var exp = expiration + now;
         cache.expirations[key] = exp;
+        cache.lastUsed[key] = now;
         cache.db[key] = value;
         if(cb) cb();
         if(refresh){
@@ -157,6 +161,7 @@ function cacheModule(config){
         var key = keys[i];
         delete cache.db[key];
         delete cache.expirations[key];
+        delete cache.lastUsed[key];
         delete cache.refreshKeys[key];
       }
       if(cb) cb(null, keys.length);
@@ -164,6 +169,7 @@ function cacheModule(config){
     else{
       delete cache.db[keys];
       delete cache.expirations[keys];
+      delete cache.lastUsed[keys];
       delete cache.refreshKeys[keys];
       if(cb) cb(null, 1);
     }
@@ -178,11 +184,50 @@ function cacheModule(config){
     log(false, '.flush() called');
     cache.db = {};
     cache.expirations = {};
+    cache.lastUsed = {};
     cache.refreshKeys = {};
     if(cb) cb();
     overwriteBrowserStorage();
     if(interval) clearInterval(interval);
     backgroundRefreshEnabled = false;
+  }
+
+  /**
+   * Flush all expired keys and values
+   * @param {function} cb
+   */
+  self.flushExpired = function(cb){
+    log(false, '.flushExpired() called');
+    var now = Date.now();
+    for(var key in cache.expirations){
+      if(cache.db.hasOwnProperty(key)){
+        var expiration = cache.expirations[key];
+        if(expiration <= now){
+          expire(key);
+        }
+      }
+    }
+    if(cb) cb();
+  }
+
+  /**
+   * Flush keys and values that haven't been used in the last N seconds
+   * (as specified by the timeout).
+   * @param {integer} timeout
+   * @param {function} cb
+   */
+  self.flushUnused = function(timeout, cb){
+    log(false, '.flushUnused() called');
+    var nowMinusTimeout = Date.now() - (timeout * 1000);
+    for(var key in cache.lastUsed){
+      if(cache.db.hasOwnProperty(key)){
+        var lastUsed = cache.lastUsed[key];
+        if(lastUsed <= nowMinusTimeout){
+          expire(key);
+        }
+      }
+    }
+    if(cb) cb();
   }
 
   /**
@@ -235,12 +280,14 @@ function cacheModule(config){
   }
 
   /**
-   * Delete a given key from cache.db and cache.expirations but not from cache.refreshKeys
+   * Delete a given key from cache.db, cache.expirations, and cache.lastUsed
+   * but not from cache.refreshKeys
    * @param {string} key
    */
   function expire(key){
     delete cache.db[key];
     delete cache.expirations[key];
+    delete cache.lastUsed[key];
     overwriteBrowserStorage();
   }
 

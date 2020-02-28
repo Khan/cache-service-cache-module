@@ -45,7 +45,7 @@ describe('cacheModule Tests', function () {
       done();
     });
   });
-  it('Setting several keys then calling .flushAll() should remove all keys', function (done) {
+  it('Setting several keys then calling .flush() should remove all keys', function (done) {
     cacheModule.set(key, value);
     cacheModule.set('key2', 'value2');
     cacheModule.set('key3', 'value3');
@@ -64,6 +64,46 @@ describe('cacheModule Tests', function () {
         });
       });
     });
+  });
+  it('Setting expirations and using .flushExpired() should remove the expired keys', function (done) {
+    cacheModule.set('key1', 'value1', 1);
+    cacheModule.set('key2', 'value2', 5);
+    cacheModule.set('key3', 'value3', 5);
+    setTimeout(function(){
+      cacheModule.flushExpired();
+      cacheModule.get('key1', function (err, response){
+        expect(response).toBe(null);
+        cacheModule.get('key1', function (err, response){
+          expect(response).toBe(null);
+          cacheModule.get('key1', function (err, response){
+            expect(response).toBe(null);
+            var data = storageMock.getItem(mockName);
+            expect(data.indexOf('key1')).toBe(-1);
+            expect(data.indexOf('key2')).toNotBe(-1);
+            expect(data.indexOf('key3')).toNotBe(-1);
+            done();
+          });
+        });
+      });
+    }, 1500);
+  });
+  it('Calling .flushUnused() should remove unused keys', function (done) {
+    cacheModule.set('key1', 'value1');
+    cacheModule.set('key2', 'value2');
+    cacheModule.set('key3', 'value3');
+    setTimeout(function(){
+      cacheModule.get('key1', function (err, response){
+        expect(response).toBe('value1');
+        setTimeout(function() {
+          cacheModule.flushUnused(1);
+          var data = storageMock.getItem(mockName);
+          expect(data.indexOf('key1')).toNotBe(-1);
+          expect(data.indexOf('key2')).toBe(-1);
+          expect(data.indexOf('key3')).toBe(-1);
+          done();
+        }, 500);
+      });
+    }, 1000);
   });
   it('Setting several keys then calling .mget() should retrieve all keys', function (done) {
     cacheModule.set(key, value);
