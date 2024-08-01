@@ -105,6 +105,23 @@ describe('cacheModule Tests', function () {
       });
     }, 1000);
   });
+  it('Calling .size() should return the number of keys', function (done) {
+    cacheModule.set('key1', 'value1');
+    cacheModule.set('key2', 'value2');
+    cacheModule.set('key3', 'value3');
+    expect(cacheModule.size()).toBe(3);
+    done();
+  });
+  it('Calling .oldest() should return the oldest key', function (done) {
+    cacheModule.set('key1', 'value1');
+    cacheModule.set('key2', 'value2');
+    cacheModule.set('key3', 'value3');
+    setTimeout(function(){
+      cacheModule.get('key1', () => {});
+      expect(cacheModule.oldest()).toBe('key2');
+      done();
+    }, 500);
+  });
   it('Setting several keys then calling .mget() should retrieve all keys', function (done) {
     cacheModule.set(key, value);
     cacheModule.set('key2', 'value2');

@@ -231,6 +231,33 @@ function cacheModule(config){
   }
 
   /**
+   * Return the number of items in the cache
+   * @returns {integer}
+   */
+  self.size = function(){
+    return Object.keys(cache.db).length;
+  }
+
+  /**
+   * Return the oldest key in the cache based on lastUsed time
+   * @returns {string}
+   */
+  self.oldest = function(){
+    var oldestKey;
+    var oldestTime = Date.now();
+    for(var key in cache.lastUsed){
+      if(cache.db.hasOwnProperty(key)){
+        var lastUsed = cache.lastUsed[key];
+        if(lastUsed < oldestTime){
+          oldestTime = lastUsed;
+          oldestKey = key;
+        }
+      }
+    }
+    return oldestKey;
+  }
+
+  /**
    * Enable browser storage if desired and available
    */
   function setupBrowserStorage(){
