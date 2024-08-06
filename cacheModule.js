@@ -258,6 +258,14 @@ function cacheModule(config){
   }
 
   /**
+   * Return the last time a key was used
+   * @returns {integer}
+   */
+  self.getLastUsed = function(key){
+    return cache.lastUsed[key];
+  }
+
+  /**
    * Enable browser storage if desired and available
    */
   function setupBrowserStorage(){
